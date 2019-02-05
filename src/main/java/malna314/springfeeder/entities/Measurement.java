@@ -1,4 +1,4 @@
-package malna314.springfeeder.domain;
+package malna314.springfeeder.entities;
 
 public class Measurement {
     private String measurementTime;
