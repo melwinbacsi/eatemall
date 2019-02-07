@@ -1,12 +1,17 @@
-package malna314.springfeeder.services;
+package malna314.springfeeder.service;
 
 import com.pi4j.io.gpio.*;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-public class PirSensor implements Runnable {
+@Service
+public class PirSensor{
     private static boolean pirStop = false;
     private static boolean pirDetected = false;
+    @Value("${pi4j.PIR.sensor}")
+    private GpioPinDigitalInput pirSensor;
 
     public static boolean isPirDetected() {
         return pirDetected;
@@ -24,10 +29,9 @@ public class PirSensor implements Runnable {
         PirSensor.pirStop = pirStop;
     }
 
-    @Override
-    public void run() {
+    public void pir() {
         final GpioController gpioSensor = GpioFactory.getInstance();
-        final GpioPinDigitalInput sensor = gpioSensor.provisionDigitalInputPin(RaspiPin.GPIO_07, PinPullResistance.PULL_DOWN);
+        final GpioPinDigitalInput sensor = pirSensor;
         sensor.addListener(new GpioPinListenerDigital() {
             @Override
             public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {

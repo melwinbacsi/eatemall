@@ -1,14 +1,15 @@
-package malna314.springfeeder.services;
+package malna314.springfeeder.service;
 
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinState;
+import org.springframework.stereotype.Service;
 
-
+@Service
 public class HX711 {
 
-    private final GpioPinDigitalOutput pinCLK;
-    private final GpioPinDigitalInput pinDAT;
+    private GpioPinDigitalOutput pinCLK;
+    private GpioPinDigitalInput pinDAT;
     private int gain;
 
     private long emptyValue = 8122210;
@@ -19,12 +20,6 @@ public class HX711 {
 
     private double weight = 0.0d;
     private long value = 0;
-
-    public HX711(GpioPinDigitalInput pinDAT, GpioPinDigitalOutput pinSCK, int gain) {
-        this.pinCLK = pinSCK;
-        this.pinDAT = pinDAT;
-        setGain(gain);
-    }
 
     public double read() {
         pinCLK.setState(PinState.LOW);
@@ -49,6 +44,14 @@ public class HX711 {
 
         weight = (value - emptyValue)*((calibrationWeight - emptyWeight)/(calibrationValue - emptyValue));
         return weight;
+    }
+
+    public void setPinCLK(GpioPinDigitalOutput pinCLK) {
+        this.pinCLK = pinCLK;
+    }
+
+    public void setPinDAT(GpioPinDigitalInput pinDAT) {
+        this.pinDAT = pinDAT;
     }
 
     public void setGain(int gain) {

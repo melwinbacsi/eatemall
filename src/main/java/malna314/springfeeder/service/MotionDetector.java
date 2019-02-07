@@ -1,8 +1,8 @@
-package malna314.springfeeder.services;
+package malna314.springfeeder.service;
 
-import malna314.springfeeder.entities.Measurement;
-import malna314.springfeeder.repository.DB;
+import malna314.springfeeder.entity.Measurement;
 import org.bytedeco.javacv.*;
+import org.springframework.stereotype.Service;
 
 import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_imgproc.*;
@@ -13,6 +13,8 @@ import java.awt.image.BufferedImage;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+
+@Service
 public class MotionDetector
                 implements Runnable {
 
