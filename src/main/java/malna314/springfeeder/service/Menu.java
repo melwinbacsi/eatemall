@@ -19,9 +19,10 @@ public class Menu {
     private MeasurementService measurementService;
     private LoadCell loadCell;
     private MotionDetector motionDetector;
+    private PictureSaver pictureSaver;
 
     @Autowired
-    public void setMotionDetector(MotionDetector motionDetector){
+    public void setMotionDetector(MotionDetector motionDetector) {
         this.motionDetector = motionDetector;
     }
 
@@ -40,79 +41,68 @@ public class Menu {
         this.measurementService = measurementService;
     }
 
+    @Autowired
+    public void setPictureSaver(PictureSaver pictureSaver) {
+        this.pictureSaver = pictureSaver;
+
+    }
+
     public void menu() {
 
         Scanner scanner = new Scanner(System.in);
-                        int origoWeight=0;
-                        int actualWeight=0;
-                        while(true){
-                        System.out.println("\np - set new password\nc - check password\nw - set weight\nr - read weight\ne - exit");
-                        char r=scanner.next().charAt(0);
-                        if(r=='p'||r=='c'||r=='e'||r=='t'||r=='w'||r=='r'){
-                        switch(r){
-                        case'p':{
-                        mailService.sendMessage();
-                        break;
+        while (true) {
+            System.out.println("\nw - set weight\nr - read weight\ne - exit");
+            char r = scanner.next().charAt(0);
+            if (r == 'p' || r == 'c' || r == 'e' || r == 't' || r == 'w' || r == 'r') {
+                switch (r) {
+                    case 't': {
+                        if (measurementService.getLastMeasurement() == null) {
+                            addNewMeasurement();
+
                         }
-                        case'c':{
+                        pictureSaver.savePicture(measurementService.getLastMeasurement());
                         break;
-                        }
-                        case't':{
-                        measurement=DB.getMeasurement(-1);
-                        if(measurement==null){
+                    }
+                    case 'w': {
+                        actualWeight = loadCell.getWeight();
                         addNewMeasurement();
-                        }
-                        Thread pst=new Thread(new PictureSaver(measurement));
-                        pst.start();
                         break;
+                    }
+                    case 'r': {
+                        if (measurementService.getLastMeasurement() == null) {
+                            addNewMeasurement();
                         }
-                        case'w':{
-                        actualWeight=LoadCell.getWeight();
-                        DateTimeFormatter dtf=DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-                        String time=LocalDateTime.now().format(dtf);
-                        Measurement measurement=new Measurement(time,time,actualWeight,actualWeight);
-                        DB.addMeasurement(measurement);
+                        origoWeight = measurementService.getLastMeasurement().getOrigoWeight();
+                        actualWeight = loadCell.getWeight();
+                        System.out.println("A kezdő súly: " + origoWeight + "g");
+                        System.out.println("Az aktuális súly: " + actualWeight + "g");
+                        System.out.println("Teljes fogyás: " + (origoWeight - actualWeight) + "g");
                         break;
+                    }
+                    case 'e': {
+                        if (!PirSensor.isPirStop()) {
+                            PirSensor.setPirStop(true);
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                            }
                         }
-                        case'r':{
-                        measurement=DB.getMeasurement(-1);
-                        if(measurement==null){
-                        addNewMeasurement();
-                        }
-                        origoWeight=measurement.getOrigoWeight();
-                        actualWeight=LoadCell.getWeight();
-                        System.out.println("A kezdő súly: "+origoWeight+"g");
-                        System.out.println("Az aktuális súly: "+actualWeight+"g");
-                        System.out.println("Teljes fogyás: "+(origoWeight-actualWeight)+"g");
-                        break;
-                        }
-                        case'e':{
-                        if(!PirSensor.isPirStop()){
-                        PirSensor.setPirStop(true);
-                        try{
-                        Thread.sleep(500);
-                        }catch(InterruptedException e){
-                        }
-                        }
-                        if(!MotionDetector.isMotionDetectorStopped()){
-                        MotionDetector.setMotionDetectorStopped(true);
-                        try{
-                        Thread.sleep(500);
-                        }catch(InterruptedException e){
-                        }
+                        if (!MotionDetector.isMotionDetectorStopped()) {
+                            MotionDetector.setMotionDetectorStopped(true);
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                            }
                         }
                         System.exit(0);
-                        }
-                        }
-                        }
-                        }
-                        }
-private void addNewMeasurement(){
-                actualWeight=load.getWeight();
-                DateTimeFormatter dtf=DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-                String time=LocalDateTime.now().format(dtf);
-                measurement=new Measurement(time,time,actualWeight,actualWeight);
-                DB.addMeasurement(measurement);
+                    }
+                }
+            }
+        }
+    }
 
-                }
-                }
+    private void addNewMeasurement() {
+        newMeasurement = new Measurement(LocalDateTime.now(), LocalDateTime.now(), actualWeight, actualWeight);
+        measurementService.addMeasurement(newMeasurement);
+    }
+}

@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @Scope("prototype")
@@ -35,21 +36,24 @@ public class PictureSaver{
         this.measurementService = measurementService;
     }
 
-    public void savePicture(){
+    public void savePicture(Measurement measurement){
         previousMeasurement = measurementService.getLastMeasurement();
+        DateTimeFormatter dtf=DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        measurement.setFileName(measurement.getMeasurementTime().format(dtf));
+
         try {
             if ((measurement.getActualWeight() < (previousMeasurement.getActualWeight() - 1)) || testMailSend) {
                 if (!testMailSend) {
                     measurementService.addMeasurement(measurement);
                 }
                 measurementTime = measurement.getMeasurementTime();
-                path = "/home/pi/camera/" + measurementTime.substring(0, 8) + "/" + measurementTime.substring(9) + ".jpg";
-                File directory = new File("/home/pi/camera/" + measurementTime.substring(0, 8));
+                path = "/home/pi/camera/" + measurement.getFileName() + ".jpg";
+                File directory = new File("/home/pi/camera/" + measurement.getFileName().substring(0, 8));
                 if (!directory.exists()) {
                     directory.mkdirs();
                 }
                 ImageIO.write(picture, "jpg", new File(path));
-                mailService.sendMail(path, measurement, previousMeasurement);
+                mailService.sendMessage(measurement, previousMeasurement);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,36 +65,13 @@ public class PictureSaver{
     public PictureSaver(Measurement measurement) {
         this(MotionDetector.getPicture(), measurement, measurement, true);
     }
+
     public PictureSaver(BufferedImage picture, Measurement measurement, Measurement previousMeasurement, boolean testMailSend) {
         this.picture = picture;
         this.measurement = measurement;
         this.testMailSend = testMailSend;
         this.previousMeasurement = previousMeasurement;
+
+
     }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public void setMeasurementTime(String measurementTime) {
-        this.measurementTime = measurementTime;
-    }
-
-    public void setMeasurement(Measurement measurement) {
-        this.measurement = measurement;
-    }
-
-    public void setPreviousMeasurement(Measurement previousMeasurement) {
-        this.previousMeasurement = previousMeasurement;
-    }
-
-    public void setPicture(BufferedImage picture) {
-        this.picture = picture;
-    }
-
-    public void setTestMailSend(boolean testMailSend) {
-        this.testMailSend = testMailSend;
-    }
-
-
 }

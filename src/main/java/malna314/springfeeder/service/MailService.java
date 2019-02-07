@@ -1,5 +1,6 @@
 package malna314.springfeeder.service;
 
+import malna314.springfeeder.entity.Measurement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -24,7 +25,7 @@ import java.io.File;
     }
 
 
-    public void sendMessage() {
+    public void sendMessage(Measurement measurement, Measurement previousMeasurement) {
         MimeMessage message = null;
 
         try {
