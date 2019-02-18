@@ -24,6 +24,8 @@ public class Measurement {
     private Integer origoWeight;
     @Column(name = "filename")
     private String fileName;
+    @Column(name ="cat")
+    private String catName;
 
     public Measurement(){}
 
@@ -81,6 +83,14 @@ public class Measurement {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getCatName() {
+        return catName;
+    }
+
+    public void setCatName(String catName) {
+        this.catName = catName;
     }
 
     @Override

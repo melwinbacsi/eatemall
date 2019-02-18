@@ -33,6 +33,8 @@ public class MeasurementService {
 
     public List<Measurement> getMeasurementsSinceLastFeeding() {
         return measurementRepository.findByOrigoTimeEqualsAndFileNameIsNot(getLastMeasurement().getOrigoTime(), "");
-
+    }
+    public Measurement findById(Long id){
+        return measurementRepository.findByIdis(id);
     }
 }

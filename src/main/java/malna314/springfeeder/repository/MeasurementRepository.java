@@ -12,4 +12,5 @@ public interface MeasurementRepository extends CrudRepository<Measurement, Long>
     Measurement findFirstByOrderByMeasurementTimeDesc();
     List<Measurement> findAll();
     List<Measurement> findByOrigoTimeEqualsAndFileNameIsNot(LocalDateTime origoTime, String fileName);
+    Measurement findByIdis(Long id);
 }
