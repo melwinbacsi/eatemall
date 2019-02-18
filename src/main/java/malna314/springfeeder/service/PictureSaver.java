@@ -3,6 +3,7 @@ package malna314.springfeeder.service;
 
 import malna314.springfeeder.entity.Measurement;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -14,17 +15,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Service
-@Scope("prototype")
-@Async
-public class PictureSaver{
+public class PictureSaver {
     private String path;
-    private LocalDateTime measurementTime;
-    private Measurement measurement;
     private Measurement previousMeasurement;
-    private BufferedImage picture;
-    private boolean testMailSend;
     private MailService mailService;
     private MeasurementService measurementService;
+    @Value("${picture.directory}")
+    private String dir;
+    private String filename;
 
     @Autowired
     public void setMailService(MailService mailService) {
@@ -36,42 +34,29 @@ public class PictureSaver{
         this.measurementService = measurementService;
     }
 
-    public void savePicture(Measurement measurement){
+    @Async
+    public void savePicture(BufferedImage picture, Measurement measurement, boolean testMailSend) {
         previousMeasurement = measurementService.getLastMeasurement();
-        DateTimeFormatter dtf=DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        measurement.setFileName(measurement.getMeasurementTime().format(dtf));
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        filename = measurement.getMeasurementTime().format(dtf) + ".jpg";
+        measurement.setFileName(filename);
 
         try {
             if ((measurement.getActualWeight() < (previousMeasurement.getActualWeight() - 1)) || testMailSend) {
                 if (!testMailSend) {
                     measurementService.addMeasurement(measurement);
                 }
-                measurementTime = measurement.getMeasurementTime();
-                path = "/home/pi/camera/" + measurement.getFileName() + ".jpg";
-                File directory = new File("/home/pi/camera/" + measurement.getFileName().substring(0, 8));
+                path = dir + filename.substring(0, 8) + "/" + filename;
+                File directory = new File(dir + filename.substring(0, 8));
                 if (!directory.exists()) {
                     directory.mkdirs();
                 }
                 ImageIO.write(picture, "jpg", new File(path));
-                mailService.sendMessage(measurement, previousMeasurement);
+                mailService.sendMessage(measurement, previousMeasurement, path);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public PictureSaver(){}
-
-    public PictureSaver(Measurement measurement) {
-        this(MotionDetector.getPicture(), measurement, measurement, true);
-    }
-
-    public PictureSaver(BufferedImage picture, Measurement measurement, Measurement previousMeasurement, boolean testMailSend) {
-        this.picture = picture;
-        this.measurement = measurement;
-        this.testMailSend = testMailSend;
-        this.previousMeasurement = previousMeasurement;
-
-
-    }
 }

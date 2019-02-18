@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@Async
 public class MeasurementService {
     MeasurementRepository measurementRepository;
 
@@ -29,5 +29,10 @@ public class MeasurementService {
 
     public List<Measurement> searchAllMeasurements(){
         return measurementRepository.findAll();
+    }
+
+    public List<Measurement> getMeasurementsSinceLastFeeding() {
+        return measurementRepository.findByOrigoTimeEqualsAndFileNameIsNot(getLastMeasurement().getOrigoTime(), "");
+
     }
 }

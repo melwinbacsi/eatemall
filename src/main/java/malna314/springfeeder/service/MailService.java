@@ -14,29 +14,37 @@ import javax.mail.internet.MimeMessage;
 import java.io.File;
 
 @Service
-@Async
     public class MailService{
 
+    private Measurement measurement;
+    private Measurement previousMeasurement;
+    private String path;
     private JavaMailSender javaMailSender;
+    @Value("${picture.directory}")
+    private String dir;
 
     @Autowired
     public void setJavaMailSender(JavaMailSender javaMailSender) {
         this.javaMailSender = javaMailSender;
     }
 
-
-    public void sendMessage(Measurement measurement, Measurement previousMeasurement) {
-        MimeMessage message = null;
+    @Async
+    public void sendMessage(Measurement measurement, Measurement previousMeasurement, String path) {
+        this.measurement=measurement;
+        this.previousMeasurement=previousMeasurement;
+        this.path=path;
+        System.out.println(measurement);
+        System.out.println(previousMeasurement);
 
         try {
-            message = javaMailSender.createMimeMessage();
+            MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
             helper.setTo("314malna@gmail.com");
             helper.setSubject("Event detected");
-            helper.setText("Legutóbb xy táp fogyott.");
-            FileSystemResource file = new FileSystemResource(new File("C:\\Users\\melwin\\Pictures\\7.png"));
-            helper.addAttachment("Invoice", file);
+            helper.setText("Jelenleg " + previousMeasurement.getActualWeight() + "g táp van a tálban.\nLegutóbb " + (previousMeasurement.getActualWeight() - measurement.getActualWeight()) + "g táp fogyott.\nAz előző etetés óta összesen " + (measurement.getOrigoWeight() - measurement.getActualWeight()) + " g tápot ettek.");
+            FileSystemResource file = new FileSystemResource(new File(path));
+            helper.addAttachment("lesifoto.jpg", file);
             javaMailSender.send(message);
 
         } catch (Exception e) {

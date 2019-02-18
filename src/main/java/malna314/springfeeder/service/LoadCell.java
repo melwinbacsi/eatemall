@@ -5,36 +5,32 @@ import com.pi4j.wiringpi.GpioUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
+import java.util.concurrent.Future;
 
 
 @Service
-@Async
 public class LoadCell {
 
+    final GpioPinDigitalInput pinHXDAT;
+    final GpioPinDigitalOutput pinHXCLK;
+    HX711 hx711;
+
     LoadCell(){
+
         GpioUtil.enableNonPrivilegedAccess();
         final GpioController gpio = GpioFactory.getInstance();
+        pinHXDAT = gpio.provisionDigitalInputPin(RaspiPin.GPIO_15, "HX_DAT", PinPullResistance.OFF);
+        pinHXCLK = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_16, "HX_CLK", PinState.LOW);
     }
-    @Value("${pi4j.HX711.pinDAT}")
-    private GpioPinDigitalOutput pinHXCLK;
 
-    @Value("${pi4j.HX711.pinCLK}")
-    private GpioPinDigitalInput pinHXDAT;
-
-    public HX711 hx711;
-
-    @Autowired()
-    public void setHx711(HX711 hx711){
-        hx711.setGain(128);
-        hx711.setPinDAT(pinHXDAT);
-        hx711.setPinCLK(pinHXCLK);
-        this.hx711=hx711;
-    }
 
     public int getWeight() {
+
+        hx711 = new HX711(pinHXDAT, pinHXCLK, 128);
         double[] weightArray = new double[7];
         double weight = 0.0d;
         for (int i = 0; i < 7; i++) {

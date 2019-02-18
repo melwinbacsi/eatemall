@@ -27,11 +27,12 @@ public class Measurement {
 
     public Measurement(){}
 
-    public Measurement(LocalDateTime measurementTime, LocalDateTime origoTime, int actualWeight, int origoWeight) {
+    public Measurement(LocalDateTime measurementTime, LocalDateTime origoTime, int actualWeight, int origoWeight, String fileName) {
         this.measurementTime = measurementTime;
         this.origoTime = origoTime;
         this.actualWeight = actualWeight;
         this.origoWeight = origoWeight;
+        this.fileName = fileName;
     }
 
     public Long getId() {
@@ -84,7 +85,13 @@ public class Measurement {
 
     @Override
     public String toString() {
-        return "Measurement{" + "id=" + id + ", measurementTime=" + measurementTime + ", actualWeight=" + actualWeight + ", origoTime=" + origoTime
-                        + ", origoWeight=" + origoWeight + '}';
+        return "Measurement{" +
+                "id=" + id +
+                ", measurementTime=" + measurementTime +
+                ", actualWeight=" + actualWeight +
+                ", origoTime=" + origoTime +
+                ", origoWeight=" + origoWeight +
+                ", fileName='" + fileName + '\'' +
+                '}';
     }
 }

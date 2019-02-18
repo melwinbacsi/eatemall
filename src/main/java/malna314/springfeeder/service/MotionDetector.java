@@ -2,6 +2,8 @@ package malna314.springfeeder.service;
 
 import malna314.springfeeder.entity.Measurement;
 import org.bytedeco.javacv.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import static org.bytedeco.javacpp.opencv_core.*;
@@ -15,45 +17,66 @@ import java.time.format.DateTimeFormatter;
 
 
 @Service
-public class MotionDetector
-                implements Runnable {
+public class MotionDetector {
 
-    private static boolean motionDetectorStopped = false;
-    private static BufferedImage picture;
-    private static BufferedImage capturedPic = null;
+    private volatile boolean motionDetectorStopped = false;
+    private BufferedImage picture;
+    private BufferedImage capturedPic = null;
+    private MeasurementService measurementService;
+    private LoadCell loadCell;
+    private PictureSaver pictureSaver;
+    private PirSensor pirSensor;
 
-    static BufferedImage getCapturedPic() {
+    @Autowired
+    public void setMeasurementService(MeasurementService measurementService){
+        this.measurementService = measurementService;
+    }
+
+    @Autowired
+    public void setLoadCell(LoadCell loadCell){
+        this.loadCell = loadCell;
+    }
+
+    @Autowired
+    public void setPictureSaver(PictureSaver pictureSaver){
+        this.pictureSaver = pictureSaver;
+    }
+
+    @Autowired
+    public void setPirSensor(PirSensor pirSensor){
+        this.pirSensor = pirSensor;
+    }
+
+    void setCapturedPic(BufferedImage capturedPic) {
+
+        this.capturedPic = capturedPic;
+    }
+
+    BufferedImage getCapturedPic() {
         return capturedPic;
     }
 
-    static void setCapturedPic(BufferedImage capturedPic) {
-        MotionDetector.capturedPic = capturedPic;
-    }
+    BufferedImage getPicture() {
 
-    static BufferedImage getPicture() {
         return picture;
     }
 
-    public static void setPicture(BufferedImage picture) {
-        MotionDetector.picture = picture;
+    public void setPicture(BufferedImage picture) {
+
+        this.picture = picture;
     }
 
-    public static boolean isMotionDetectorStopped() {
+    public boolean isMotionDetectorStopped() {
+
         return motionDetectorStopped;
     }
 
-    public static void setMotionDetectorStopped(boolean motionDetectorStopped) {
-        MotionDetector.motionDetectorStopped = motionDetectorStopped;
+    public void setMotionDetectorStopped(boolean motionDetectorStopped) {
+        this.motionDetectorStopped = motionDetectorStopped;
     }
 
-    public void run() {
-        try {
-            detectMotion();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
+    @Async
     public void detectMotion() throws Exception {
         long time = 0;
 
@@ -84,22 +107,20 @@ public class MotionDetector
             }
             if (previousImage != null) {
                 if ((System.currentTimeMillis() / 1000) - time > 60 && System.currentTimeMillis() / 1000 - time < 100 && captured) {
-                    System.out.println("alarm");
                     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-                    Measurement previousMeasurement = DB.getMeasurement(-1);
-                    Measurement measurement = new Measurement(LocalDateTime.now().format(dtf), previousMeasurement.getOrigoTime(), LoadCell.getWeight(), previousMeasurement.getOrigoWeight());
-                    Thread pst = new Thread(new PictureSaver(getCapturedPic(), measurement, previousMeasurement, false));
-                    pst.start();
+                    Measurement previousMeasurement = measurementService.getLastMeasurement();
+                    Measurement measurement = new Measurement(LocalDateTime.now(), previousMeasurement.getOrigoTime(), loadCell.getWeight(), previousMeasurement.getOrigoWeight(), "");
+                    pictureSaver.savePicture(getCapturedPic(), measurement, false);
                     captured = false;
                     cachedPicture = null;
-                    PirSensor.setPirDetected(false);
+                    pirSensor.setPirDetected(false);
                 }
 
                 absdiff(image, previousImage, difference);
                 threshold(difference, difference, 45, 255, CV_THRESH_BINARY);
                 findContours(difference, contour, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
                 if (contour.size() > 0 && (System.currentTimeMillis() / 1000) - time > 7) {
-                    if ((System.currentTimeMillis() / 1000) - time < 15 && PirSensor.isPirDetected()) {
+                    if ((System.currentTimeMillis() / 1000) - time < 15 && pirSensor.isPirDetected()) {
                         detectionCounter++;
                     } else {
                         detectionCounter = 0;

@@ -2,24 +2,22 @@ package malna314.springfeeder.service;
 
 import malna314.springfeeder.entity.Measurement;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
 @Service
-@Async
 public class Menu {
-    private int origoWeight;
-    private int actualWeight;
+    private Integer origoWeight;
+    private Integer actualWeight;
     private Measurement newMeasurement;
     private MailService mailService;
     private MeasurementService measurementService;
     private LoadCell loadCell;
     private MotionDetector motionDetector;
     private PictureSaver pictureSaver;
+    private PirSensor pirSensor;
 
     @Autowired
     public void setMotionDetector(MotionDetector motionDetector) {
@@ -47,7 +45,18 @@ public class Menu {
 
     }
 
+    @Autowired
+    public void setPirSensor(PirSensor pirSensor) {
+        this.pirSensor = pirSensor;
+    }
+
     public void menu() {
+        pirSensor.pir();
+            try {
+              motionDetector.detectMotion();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
 
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -58,9 +67,8 @@ public class Menu {
                     case 't': {
                         if (measurementService.getLastMeasurement() == null) {
                             addNewMeasurement();
-
                         }
-                        pictureSaver.savePicture(measurementService.getLastMeasurement());
+                        pictureSaver.savePicture(motionDetector.getPicture(), measurementService.getLastMeasurement(), true);
                         break;
                     }
                     case 'w': {
@@ -80,15 +88,15 @@ public class Menu {
                         break;
                     }
                     case 'e': {
-                        if (!PirSensor.isPirStop()) {
-                            PirSensor.setPirStop(true);
+                        if (!pirSensor.isPirStop()) {
+                            pirSensor.setPirStop(true);
                             try {
                                 Thread.sleep(500);
                             } catch (InterruptedException e) {
                             }
                         }
-                        if (!MotionDetector.isMotionDetectorStopped()) {
-                            MotionDetector.setMotionDetectorStopped(true);
+                        if (!motionDetector.isMotionDetectorStopped()) {
+                            motionDetector.setMotionDetectorStopped(true);
                             try {
                                 Thread.sleep(500);
                             } catch (InterruptedException e) {
@@ -102,7 +110,7 @@ public class Menu {
     }
 
     private void addNewMeasurement() {
-        newMeasurement = new Measurement(LocalDateTime.now(), LocalDateTime.now(), actualWeight, actualWeight);
+        newMeasurement = new Measurement(LocalDateTime.now(), LocalDateTime.now(), actualWeight, actualWeight, "");
         measurementService.addMeasurement(newMeasurement);
     }
 }
